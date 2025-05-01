@@ -1,8 +1,7 @@
 import unittest
-from unittest.mock import patch, MagicMock
-import time
-import yaml
+from unittest.mock import patch, MagicMock, mock_open
 from main import load_config, extract_domain, check_health, log_result
+
 
 class TestMonitorScript(unittest.TestCase):
 
@@ -78,13 +77,15 @@ class TestMonitorScript(unittest.TestCase):
     def test_log_result(self):
         domain_stats = {
             'example.com': {'up': 3, 'total': 4},
-            'another.com': {'up': 2, 'total': 3},
+            'another.com': {'up': 2, 'total': 3},  # Availability 66%
         }
-        with patch("time.sleep", return_value=None):  # Skip time.sleep in the test
+
+        with patch("builtins.open", mock_open()) as mocked_open_func:
             log_result(domain_stats)
-            # Check if the log file is being written correctly
-            handle = open("availability.log", "a")
-            handle.write.assert_called_with('example.com has 75% availability percentage\n')
+            mock_file_handle = mocked_open_func()
+
+            mock_file_handle.write.assert_any_call('example.com has 75% availability percentage\n')
+
 
 if __name__ == '__main__':
     unittest.main()
